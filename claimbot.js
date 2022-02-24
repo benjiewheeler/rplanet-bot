@@ -272,9 +272,10 @@ async function increaseLimit(account, privKey) {
 async function claimAether(account, privKey) {
     shuffleEndpoints();
 
-    const { DELAY_MIN, DELAY_MAX, MAX_WASTE } = process.env;
+    const { DELAY_MIN, DELAY_MAX, MIN_CLAIM, MAX_WASTE } = process.env;
     const delayMin = parseFloat(DELAY_MIN) || 4;
     const delayMax = parseFloat(DELAY_MAX) || 10;
+    const minClaim = parseFloat(MIN_CLAIM) || 50e3;
     const maxWaste = parseFloat(MAX_WASTE) || 1e3;
 
     logTask(`Claiming Aether`);
@@ -288,6 +289,12 @@ async function claimAether(account, privKey) {
     const { limit, extended_at } = accountLimit || { limit: 1e4, extended_at: 0 };
 
     const collected = await fetchCollected(account);
+
+    if (minClaim > collected) {
+        console.log(`${yellow("Warning")} Account ${cyan(account)} doesn't have enough aether to claim; aborting`);
+        return;
+    }
+
     const now = Math.floor(Date.now() / 1e3);
     const hours = Math.floor((now - extended_at) / 3600);
     const currentLimit = Math.max(1e4, (limit / 1e4) * Math.pow(0.99, hours));
